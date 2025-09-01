@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Shelly Pro 1PM Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Reset & base */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            text-align: center;
+            color: #1a73e8;
+            margin-top: 20px;
+        }
+
+        /* Container */
+        .container {
+            width: 90%;
+            margin: 20px auto;
+        }
+
+        /* Table */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border-radius: 10px;
+            overflow: hidden;
+            animation: fadeIn 0.5s ease-in;
+        }
+        th, td {
+            padding: 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #1a73e8;
+            color: white;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f0f4f8;
+        }
+        td.alert {
+            background-color: rgba(255,0,0,0.1);
+            color: red;
+            font-weight: bold;
+            animation: blink 1s infinite;
+        }
+
+        /* Chart container */
+        #chart-container {
+            margin: 40px 0;
+            background-color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {opacity: 0;}
+            to {opacity: 1;}
+        }
+        @keyframes blink {
+            0%, 50%, 100% {opacity: 1;}
+            25%, 75% {opacity: 0.4;}
+        }
+
+        /* Alert banner */
+        #alert-banner {
+            display: none;
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #ff4d4f;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 100;
+            animation: slideDown 0.5s ease forwards;
+        }
+        @keyframes slideDown {
+            from {transform: translate(-50%, -50px);}
+            to {transform: translate(-50%, 0);}
+        }
+    </style>
+</head>
+<body>
+    <h1>Shelly Pro 1PM – Dashboard</h1>
+
+    <div id="alert-banner">⚡ Power exceeds 3500W!</div>
+
+    <div class="container">
+        <!-- Table -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Power (W)</th>
+                    <th>Voltage (V)</th>
+                    <th>Current (A)</th>
+                    <th>Energy (Wh)</th>
+                </tr>
+            </thead>
+            <tbody id="measurement-body">
+                {% for m in measurements %}
+                <tr>
+                    <td>{{ m.timestamp }}</td>
+                    <td {% if m.power > 3500 %}class="alert"{% endif %}>{{ m.power }}</td>
+                    <td>{{ m.voltage }}</td>
+                    <td>{{ m.current }}</td>
+                    <td>{{ m.energy }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Chart -->
+        <div id="chart-container">
+            <canvas id="powerChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const powerThreshold = {{ power_alert_threshold|floatformat }};
+        const alertBanner = document.getElementById('alert-banner');
+
+        const ctx = document.getElementById('powerChart').getContext('2d');
+        const powerChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Power (W)',
+                    data: [],
+                    borderColor: '#1a73e8',
+                    backgroundColor: 'rgba(26,115,232,0.2)',
+                    tension: 0.3,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#1a73e8',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1a73e8',
+                        titleColor: 'white',
+                        bodyColor: 'white'
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Power (W)' } },
+                    x: { title: { display: true, text: 'Timestamp' } }
+                }
+            }
+        });
+
+        async function fetchLatestMeasurements() {
+            try {
+                const response = await fetch('/api/measurements/latest/');
+                const data = await response.json();
+
+                // Update table
+                const tbody = document.getElementById('measurement-body');
+                tbody.innerHTML = "";
+                let alertShown = false;
+                data.forEach(m => {
+                    const tr = document.createElement('tr');
+                    if (m.power > powerThreshold) alertShown = true;
+                    tr.innerHTML = `
+                        <td>${m.timestamp}</td>
+                        <td ${m.power > powerThreshold ? 'class="alert"' : ''}>${m.power}</td>
+                        <td>${m.voltage}</td>
+                        <td>${m.current}</td>
+                        <td>${m.energy}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Show/hide alert banner
+                alertBanner.style.display = alertShown ? 'block' : 'none';
+
+                // Update chart
+                const labels = data.map(m => new Date(m.timestamp).toLocaleTimeString());
+                const powerValues = data.map(m => m.power);
+
+                // Inverse pour que le plus récent soit à droite
+                powerChart.data.labels = labels.reverse();
+                powerChart.data.datasets[0].data = powerValues.reverse();
+                powerChart.update();
+
+            } catch (err) {
+                console.error("Error fetching measurements:", err);
+            }
+        }
+
+        // Polling every 2 seconds
+        setInterval(fetchLatestMeasurements, 2000);
+        fetchLatestMeasurements(); // initial load
+    </script>
+</body>
+</html>

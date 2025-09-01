@@ -1,0 +1,60 @@
+version: "3.8"
+
+services:
+  # PostgreSQL
+  db:
+    image: postgres:15
+    container_name: shelly_postgres
+    env_file: .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - shelly-net
+
+  # Kafka single-node KRaft (no Zookeeper)
+  kafka:
+    image: confluentinc/cp-kafka:7.2.15
+    container_name: shelly_kafka
+    environment:
+      KAFKA_KRAFT_MODE: "true"
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9092"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    ports:
+      - "9092:9092"
+    networks:
+      - shelly-net
+
+
+  # Django app
+  web:
+    build: .
+    container_name: shelly_web
+    env_file: .env
+    depends_on:
+      - db
+      - kafka
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    networks:
+      - shelly-net
+
+volumes:
+  postgres_data:
+  kafka_data:
+
+networks:
+  shelly-net:
+    driver: bridge
