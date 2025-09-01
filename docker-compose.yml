@@ -27,7 +27,7 @@ services:
       KAFKA_NODE_ID: 1
       KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093" # Use the service name 'kafka'
       KAFKA_LISTENERS: "PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093"
-      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://localhost:9092" # For external access
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092" # For external access
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT # Or CONTROLLER if you prefer
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -37,6 +37,8 @@ services:
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER # Added to specify controller listener
     volumes:
       - kafka_data:/var/lib/kafka/data
+    networks:
+      - shelly-net
 
   # Django app
   web:

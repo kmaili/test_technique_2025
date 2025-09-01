@@ -11,9 +11,9 @@ from rest_framework.response import Response
 from .serializers import MeasurementSerializer
 from rest_framework.pagination import PageNumberPagination
 from django.utils.dateparse import parse_datetime
+import logging
 
-# from .kafka_producer import send_to_kafka  # We'll create this next
-
+logger = logging.getLogger(__name__)
 
 @csrf_exempt  # Shelly devices may not send CSRF token
 def webhook(request):
@@ -45,7 +45,7 @@ def webhook(request):
             return JsonResponse({"error": f"Missing field: {field}"}, status=400)
 
     # Add server-side timestamp
-    data["timestamp"] = timezone.now().isoformat()
+    data["timestamp"] = timezone.now()
 
     # Save to PostgreSQL
     measurement = Measurement.objects.create(
@@ -66,7 +66,7 @@ def webhook(request):
             "timestamp": measurement.timestamp.isoformat()
         })
     except Exception as e:
-        print("Kafka error:", e)
+        logger.error("Kafka error:", e)
 
     return JsonResponse({"status": "success", "data": data})
 

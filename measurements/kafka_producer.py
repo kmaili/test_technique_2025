@@ -2,7 +2,8 @@ import os
 import json
 import logging
 from kafka import KafkaProducer
-from kafka.errors import KafkaError
+from kafka.admin import KafkaAdminClient, NewTopic
+from kafka.errors import KafkaError, TopicAlreadyExistsError
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -12,7 +13,35 @@ class ShellyKafkaProducer:
         self.broker = os.getenv("KAFKA_BROKER", "localhost:9092")
         self.topic = os.getenv("KAFKA_TOPIC", "shelly_data")
         self.producer = None
+
+        # Ensure topic exists
+        self._create_topic_if_not_exists()
+
+        # Connect producer
         self._connect()
+
+    def _create_topic_if_not_exists(self):
+        """Create Kafka topic if it does not exist"""
+        try:
+            admin = KafkaAdminClient(bootstrap_servers=[self.broker])
+
+            topic = NewTopic(
+                name=self.topic,
+                num_partitions=int(os.getenv("KAFKA_TOPIC_PARTITIONS", "1")),
+                replication_factor=int(os.getenv("KAFKA_TOPIC_REPLICATION", "1"))
+            )
+
+            admin.create_topics([topic])
+            logger.info(f"[Kafka] Topic '{self.topic}' created")
+        except TopicAlreadyExistsError:
+            logger.info(f"[Kafka] Topic '{self.topic}' already exists")
+        except Exception as e:
+            logger.warning(f"[Kafka] Could not create topic '{self.topic}': {e}")
+        finally:
+            try:
+                admin.close()
+            except Exception:
+                pass
 
     def _connect(self):
         """Initialize Kafka producer, log error if broker not found"""

@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     curl \
     postgresql-client \
+    netcat-traditional \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
