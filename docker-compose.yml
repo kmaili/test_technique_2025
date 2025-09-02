@@ -1,7 +1,6 @@
 version: "3.8"
 
 services:
-  # PostgreSQL
   db:
     image: postgres:15
     container_name: shelly_postgres
@@ -15,7 +14,7 @@ services:
 
   # Kafka single-node KRaft (no Zookeeper)
   kafka:
-    image: confluentinc/cp-kafka:latest # Or a specific version like 7.5.0
+    image: confluentinc/cp-kafka:latest
     hostname: kafka
     container_name: kafka
     ports:
@@ -25,22 +24,21 @@ services:
       KAFKA_KRAFT_MODE: "true"
       KAFKA_PROCESS_ROLES: controller,broker
       KAFKA_NODE_ID: 1
-      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093" # Use the service name 'kafka'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093" 
       KAFKA_LISTENERS: "PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093"
-      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092" # For external access
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT # Or CONTROLLER if you prefer
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092" 
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT 
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      CLUSTER_ID: "AbcdefgHIJklmnoPqrstU" # Replace with a unique, randomly generated ID
+      CLUSTER_ID: "AbcdefgHIJklmnoPqrstU" 
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER # Added to specify controller listener
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER 
     volumes:
       - kafka_data:/var/lib/kafka/data
     networks:
       - shelly-net
 
-  # Django app
   web:
     build: .
     container_name: shelly_web
