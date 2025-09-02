@@ -1,4 +1,4 @@
-# README – Mini-système de collecte de données Shelly Pro 1PM
+# Mini-système de collecte de données Shelly Pro 1PM
 
 ## 📌 Description
 
@@ -100,6 +100,31 @@ curl "http://localhost:8000/webhook/?power=100.3&voltage=230.0&current=0.43&ener
 }
 ```
 
+### 🔎 Vérifier les données dans Kafka
+
+Lister les topics disponibles :
+
+```bash
+docker exec -it kafka kafka-topics --bootstrap-server kafka:9092 --list
+```
+
+Créer le topic (si inexistant) :
+
+```bash
+docker exec -it kafka kafka-topics --bootstrap-server kafka:9092 \
+  --create --topic shelly_data --partitions 1 --replication-factor 1
+```
+
+Consommer les messages depuis le début :
+
+```bash
+docker exec -it kafka kafka-console-consumer --bootstrap-server kafka:9092 \
+  --topic shelly_data --from-beginning
+```
+
+👉 Vous verrez apparaître les JSON envoyés par l’application.
+
+
 ---
 
 ## 🗄 Stockage PostgreSQL
@@ -162,58 +187,37 @@ GET http://localhost:8000/api/measurements/?start=2025-09-01T00:00:00Z&end=2025-
 ```
 SHELLY_PROJECT/
 │
-├── measurements/                # Application principale Django (gestion des mesures)
-│   ├── migrations/              # Migrations de la base de données
-│   ├── templates/               # Templates HTML pour l'affichage web
+├── measurements/                
+│   ├── migrations/          # Migrations de la base de données
+│   ├── templates/           # Templates HTML pour l'affichage web
 │   ├── __init__.py
-│   ├── admin.py                 # Configuration de l’admin Django
-│   ├── apps.py                  # Configuration de l’app Django
-│   ├── kafka_producer.py        # Producteur Kafka (envoi des mesures)
-│   ├── models.py                # Modèle Measurement
-│   ├── serializers.py           # Sérialiseurs pour l’API REST
-│   ├── tests.py                 # Tests unitaires
-│   ├── urls.py                  # Routes spécifiques à l’app
-│   └── views.py                 # Logique des endpoints (webhook, API, affichage)
+│   ├── admin.py                 
+│   ├── apps.py                  
+│   ├── kafka_producer.py    # Producteur Kafka
+│   ├── models.py            # Modèle Measurement
+│   ├── serializers.py       # Sérialiseurs pour l’API REST
+│   ├── tests.py                 
+│   ├── urls.py                  
+│   └── views.py                 
 │
-├── shelly_project/              # Répertoire principal Django (projet)
+├── shelly_project/          # Répertoire principal Django (projet)
 │   ├── __init__.py
-│   ├── asgi.py                  # Configuration ASGI
-│   ├── settings.py              # Paramètres globaux Django (Postgres, Kafka, etc.)
-│   ├── urls.py                  # Routes globales du projet
-│   └── wsgi.py                  # Configuration WSGI
+│   ├── asgi.py                  
+│   ├── settings.py              
+│   ├── urls.py                  
+│   └── wsgi.py                  
 │
-├── .env                         # Variables d’environnement locales (non versionné)
-├── .env-sample                  # Exemple de configuration .env
-├── docker-compose.yml           # Orchestration des services (web, Postgres, Kafka)
-├── Dockerfile                   # Image Docker pour le service web
-├── entrypoint.sh                # Script d’initialisation (migrations, wait-for-db)
-├── manage.py                    # Script principal Django
-└── README.md                    # Documentation du projet
+├── .env                     # Variables d’environnement locales
+├── .env-sample              # Exemple de configuration .env
+├── docker-compose.yml           
+├── Dockerfile                   
+├── entrypoint.sh            # Script d’initialisation (migrations, wait-for-db)
+├── manage.py                    
+└── README.md                    
 ```
-
----
-
-## 🎯 Exemples de scénarios réels
-
-1. **Borne envoie 3500 W** → une alerte rouge s’affiche sur l’UI.
-2. **Consultation historique** → l’API REST permet de filtrer par plage de dates pour analyser la consommation.
-3. **Intégration externe** → Kafka diffuse les mesures en temps réel pour une autre application de monitoring.
-
----
-
-## ✅ Tests rapides
-
-1. Démarrer l’application avec `docker-compose up`.
-2. Envoyer une requête au webhook (`POST` ou `GET`).
-3. Vérifier :
-
-   * Le message apparaît dans Kafka (`shelly_data`).
-   * La donnée est stockée dans PostgreSQL.
-   * L’interface web affiche la mesure.
-   * L’API REST retourne la mesure.
 
 ---
 
 ## 👤 Auteur
 
-Développé par Aymen – 2025.
+Développé par Aymen Kmaili – 2025.

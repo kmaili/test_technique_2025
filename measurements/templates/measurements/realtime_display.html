@@ -1,4 +1,6 @@
 {% load static %}
+{% load tz %}
+{% load humanize %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -14,7 +16,6 @@
     <div id="alert-banner">⚡ Power exceeds {{power_alert_threshold|floatformat}} W!</div>
 
     <div class="container">
-        <!-- Table -->
         <table>
             <thead>
                 <tr>
@@ -28,7 +29,8 @@
             <tbody id="measurement-body">
                 {% for m in measurements %}
                 <tr>
-                    <td>{{ m.timestamp }}</td>
+                    <td> {{ m.timestamp|localtime|date:'d/m/Y H:i:s' }} </td>
+
                     <td {% if m.power > 3500 %}class="alert"{% endif %}>{{ m.power }}</td>
                     <td>{{ m.voltage }}</td>
                     <td>{{ m.current }}</td>
@@ -40,7 +42,6 @@
             </tbody>
         </table>
 
-        <!-- Chart -->
         <div id="chart-container">
             <canvas id="powerChart"></canvas>
         </div>
