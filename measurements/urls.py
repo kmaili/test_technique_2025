@@ -6,7 +6,4 @@ urlpatterns = [
     path('api/measurements/latest/', views.latest_measurements, name='latest_measurements'),
     path('api/measurements/', views.measurements_list, name='measurements_list'),
     path('', views.realtime_view, name='realtime'),
-    # Bonus / API REST endpoints (if using DRF)
-    # path('api/measurements/', views.MeasurementList.as_view(), name='measurements-list'),
-    # path('api/measurements/latest/', views.LatestMeasurements.as_view(), name='measurements-latest'),
 ]

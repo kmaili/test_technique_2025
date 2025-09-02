@@ -15,13 +15,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-@csrf_exempt  # Shelly devices may not send CSRF token
+@csrf_exempt
 def webhook(request):
     """
     Webhook endpoint for Shelly Pro 1PM
     Accepts GET (query params) and POST (JSON body)
     """
-    # Initialize data dictionary
     data = {}
 
     # Handle POST
@@ -38,16 +37,13 @@ def webhook(request):
     else:
         return JsonResponse({"error": "Method not allowed"}, status=405)
 
-    # Ensure required fields
     required_fields = ["power", "voltage", "current", "energy"]
     for field in required_fields:
         if field not in data:
             return JsonResponse({"error": f"Missing field: {field}"}, status=400)
 
-    # Add server-side timestamp
     data["timestamp"] = timezone.now()
 
-    # Save to PostgreSQL
     measurement = Measurement.objects.create(
         power=float(data["power"]),
         voltage=float(data["voltage"]),
@@ -56,7 +52,6 @@ def webhook(request):
         timestamp=data["timestamp"]
     )
 
-    # Send to Kafka
     try:
         kafka_producer.send({
             "power": measurement.power,
@@ -74,7 +69,6 @@ def realtime_view(request):
     """
     Render a page showing the 10 latest measurements
     """
-    # Fetch the 10 latest measurements
     latest_measurements = Measurement.objects.all()[:10]
     
     return render(request, "measurements/realtime_display.html", {
@@ -101,7 +95,6 @@ def measurements_list(request):
     """
     queryset = Measurement.objects.all()
     
-    # Filter by start and end timestamps (ISO 8601)
     start = request.GET.get("start")
     end = request.GET.get("end")
 
@@ -114,10 +107,8 @@ def measurements_list(request):
         if end_dt:
             queryset = queryset.filter(timestamp__lte=end_dt)
     
-    # Order by newest first
     queryset = queryset.order_by("-timestamp")
     
-    # Pagination
     paginator = PageNumberPagination()
     paginator.page_size = 10
     result_page = paginator.paginate_queryset(queryset, request)

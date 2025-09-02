@@ -6,7 +6,6 @@ from kafka.admin import KafkaAdminClient, NewTopic
 from kafka.errors import KafkaError, TopicAlreadyExistsError
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 class ShellyKafkaProducer:
     def __init__(self):

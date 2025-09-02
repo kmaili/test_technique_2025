@@ -28,8 +28,8 @@ L’architecture repose sur **Django** et **Django REST Framework**, avec conten
 1. **Cloner le projet** :
 
    ```bash
-   git clone <repo_url>
-   cd <repo_name>
+   git clone https://github.com/kmaili/test_technique_2025
+   cd test_technique_2025
    ```
 
 2. **Configurer les variables d’environnement** :
