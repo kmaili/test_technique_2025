@@ -90,7 +90,6 @@ def latest_measurements(request):
 @api_view(['GET'])
 def measurements_list(request):
     """
-    GET /api/measurements/?page=1&start=...&end=...
     Returns paginated measurements, optionally filtered by start/end datetime
     """
     queryset = Measurement.objects.all()
